@@ -2,10 +2,7 @@
 
 (provide (all-defined-out))
 
-(define integers-from
-  (lambda (n)
-    (cons-lzl n (lambda () (integers-from (+ n 1))))))
-
+(define id (lambda (x) x))
 (define cons-lzl cons)
 (define empty-lzl? empty?)
 (define empty-lzl '())
@@ -14,7 +11,9 @@
   (lambda (lzl)
     ((cdr lzl))))
 
-(define leaf? (lambda (x) (not (list? x))))
+(define integers-from
+  (lambda (n)
+    (cons-lzl n (lambda () (integers-from (+ n 1))))))
 
 ;; Signature: map-lzl(f, lz)
 ;; Type: [[T1 -> T2] * Lzl(T1) -> Lzl(T2)]
@@ -44,33 +43,47 @@
         (head lz-lst)
         (nth (tail lz-lst) (- n 1)))))
 
-
-;;; Q3.1
+;;; Q1.1
 ; Signature: append$(lst1, lst2, cont) 
 ; Type: [List * List * [List -> T]] -> T
 ; Purpose: Returns the concatination of the given two lists, with cont pre-processing
 (define append$
-  (lambda (lst1 lst2 cont)
+ (lambda (lst1 lst2 cont)
     (if (empty? lst1)
-        (cont lst2)
-        (append$ (cdr lst1)
-                 lst2
-                 (lambda (result)
-                   (cont (cons (car lst1) result)))))))
+       (cont lst2)
+       (append$ (cdr lst1) lst2 
+	  (lambda (append-res)
+              (cont (cons (car lst1) append-res)))))))
 
-;;; Q3.2
+;;; Q1.2
 ; Signature: equal-trees$(tree1, tree2, succ, fail) 
 ; Type: [Tree * Tree * [Tree ->T1] * [Pair->T2] -> T1 U T2
 ; Purpose: Determines the structure identity of a given two lists, with post-processing succ/fail
+(define leaf? (lambda (x) (not (list? x))))
 (define equal-trees$ 
-  (lambda (tree1 tree2 succ fail)
-    #f ;@TODO
-  )
-)
+ (lambda (tree1 tree2 succ fail)
+    (cond 
+        ((and (empty? tree1) (empty? tree2))
+           (succ '()))
+          ((and (empty? tree1) (not (empty? tree2)))
+	    (fail (cons tree1 tree2)))
+          ((and (not (empty? tree1)) (empty? tree2))
+	   (fail (cons tree1 tree2)))
+          ((and (leaf? tree1) (leaf? tree2))
+           (succ (cons tree1 tree2)))
+          ((and (leaf? tree1) (not (leaf? tree2)))
+           (fail (cons tree1 tree2)))
+          ((and (not (leaf? tree1)) (leaf? tree2))
+           (fail (cons tree1 tree2)))          
+          (else (equal-trees$ (car tree1) (car tree2)
+                             (lambda (suc-car)
+                               (equal-trees$ (cdr tree1) (cdr tree2)
+                                            (lambda (suc-cdr)
+                                              (succ (cons suc-car suc-cdr)))
+                                            fail))
+                             fail)))))
 
-
-
-;;; Q4.1
+;;; Q2.1
 
 ;; Signature: as-real(x)
 ;; Type: [ Number -> Lzl(Number) ]
@@ -78,7 +91,7 @@
 ;; constant real number
 (define as-real
   (lambda (x)
-    #f ;@TODO
+    (cons x (lambda () (as-real x)))
   )
 )
 
@@ -88,7 +101,7 @@
 ;; Purpose: Addition of real numbers
 (define ++
   (lambda (x y)
-    #f ;@TODO
+    (cons-lzl (+ (head x) (head y)) (lambda () (++ (tail x) (tail y))))
   )
 )
 
@@ -97,7 +110,7 @@
 ;; Purpose: Subtraction of real numbers
 (define --
   (lambda (x y)
-    #f ;@TODO
+    (cons-lzl (- (head x) (head y)) (lambda () (-- (tail x) (tail y))))
   )
 )
 
@@ -106,19 +119,20 @@
 ;; Purpose: Multiplication of real numbers
 (define **
   (lambda (x y)
-    #f ;@TODO
+    (cons-lzl (* (head x) (head y)) (lambda () (** (tail x) (tail y))))
   )
 )
+
 ;; Signature: //(x, y)
 ;; Type: [ Lzl(Number) * Lzl(Number) -> Lzl(Number) ]
 ;; Purpose: Division of real numbers
 (define //
   (lambda (x y)
-    #f ;@TODO
+    (cons-lzl (/ (head x) (head y)) (lambda () (// (tail x) (tail y))))
   )
 )
 
-;;; Q4.2.a
+;;; Q2.2.a
 ;; Signature: sqrt-with(x y)
 ;; Type: [ Lzl(Number) * Lzl(Number) -> Lzl(Lzl(Number)) ]
 ;; Purpose: Using an initial approximation `y`, return a 
@@ -126,27 +140,27 @@
 ;; square root of `x`
 (define sqrt-with
   (lambda (x y)
-    #f ;@TODO
+    (cons-lzl y (λ () (sqrt-with x (// (++ (** y y) x) (++ y y)))))
   )
 )
 
-;;; Q4.2.b
+;;; Q2.2.b
 ;; Signature: diag(lzl)
 ;; Type: [ Lzl(Lzl(T)) -> Lzl(T) ]
 ;; Purpose: Diagonalize an infinite lazy list
 (define diag
   (lambda (lzl)
-    #f ;@TODO
+    (cons-lzl (head (head lzl)) (λ () (diag (map-lzl tail (tail lzl)))))
   )
 )
 
-;;; Q4.2.c
+;;; Q2.2.c
 ;; Signature: rsqrt(x)
 ;; Type: [ Lzl(Number) -> Lzl(Number) ]
 ;; Purpose: Take a real number and return its square root
 ;; Example: (take (rsqrt (as-real 4.0)) 6) => '(4.0 2.5 2.05 2.0006097560975613 2.0000000929222947 2.000000000000002)
 (define rsqrt
   (lambda (x)
-    #f ;@TODO
+    (diag (sqrt-with x x))
   )
 )
