@@ -83,6 +83,4 @@ author_of_genre(GenreName, AuthorName) :-
 
 
 % Signature: longest_book(AuthorName, BookName)/2
-% Purpose: true if the longest book that an author by the name
-% AuthorName has written is titled BookName.
-
+% Purpose: true if the longest book that an author by the name AuthorName has written is titled BookName.:- begin_tests(max_list_tests)
